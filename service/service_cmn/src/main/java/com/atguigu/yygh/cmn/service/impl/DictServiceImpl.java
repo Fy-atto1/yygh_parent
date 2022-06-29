@@ -7,12 +7,14 @@ import com.atguigu.yygh.cmn.service.DictService;
 import com.atguigu.yygh.common.result.Result;
 import com.atguigu.yygh.model.cmn.Dict;
 import com.atguigu.yygh.vo.cmn.DictEeVo;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -78,6 +80,30 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
                     .doRead();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    // 根据dictCode和value查询
+    @Override
+    public String getDictName(String dictCode, String value) {
+        if (StringUtils.isEmpty(dictCode)) {
+            // 如果dictCode为空，直接根据value进行查询
+            QueryWrapper<Dict> wrapper = new QueryWrapper<>();
+            wrapper.eq("value", value);
+            Dict dict = baseMapper.selectOne(wrapper);
+            return dict.getName();
+        } else {
+            // 如果dictCode不为空，根据dictCode和value查询
+            // 首先根据dictCode查询上级dict的id值
+            QueryWrapper<Dict> wrapper = new QueryWrapper<>();
+            wrapper.eq("dict_code", dictCode);
+            Dict parentDict = baseMapper.selectOne(wrapper);
+            Long parentDictId = parentDict.getId();
+            // 根据parent_id和value进行查询
+            Dict dict = baseMapper.selectOne(new QueryWrapper<Dict>()
+                    .eq("parent_id", parentDictId)
+                    .eq("value", value));
+            return dict.getName();
         }
     }
 
