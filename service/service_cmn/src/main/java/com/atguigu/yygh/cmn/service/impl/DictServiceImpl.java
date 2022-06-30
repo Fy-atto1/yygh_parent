@@ -4,10 +4,8 @@ import com.alibaba.excel.EasyExcel;
 import com.atguigu.yygh.cmn.listener.DictListener;
 import com.atguigu.yygh.cmn.mapper.DictMapper;
 import com.atguigu.yygh.cmn.service.DictService;
-import com.atguigu.yygh.common.result.Result;
 import com.atguigu.yygh.model.cmn.Dict;
 import com.atguigu.yygh.vo.cmn.DictEeVo;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
@@ -19,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,9 +92,7 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
         } else {
             // 如果dictCode不为空，根据dictCode和value查询
             // 首先根据dictCode查询上级dict的id值
-            QueryWrapper<Dict> wrapper = new QueryWrapper<>();
-            wrapper.eq("dict_code", dictCode);
-            Dict parentDict = baseMapper.selectOne(wrapper);
+            Dict parentDict = getDictByDictCode(dictCode);
             Long parentDictId = parentDict.getId();
             // 根据parent_id和value进行查询
             Dict dict = baseMapper.selectOne(new QueryWrapper<Dict>()
@@ -105,6 +100,22 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
                     .eq("value", value));
             return dict.getName();
         }
+    }
+
+    // 根据dictCode获取下级节点
+    @Override
+    public List<Dict> findByDictCode(String dictCode) {
+        // 根据dictCode获取对应id
+        Dict dict = this.getDictByDictCode(dictCode);
+        // 根据id获取子节点
+        return this.findChildData(dict.getId());
+    }
+
+    // 根据dict_code获取dict
+    private Dict getDictByDictCode(String dictCode) {
+        QueryWrapper<Dict> wrapper = new QueryWrapper<>();
+        wrapper.eq("dict_code", dictCode);
+        return baseMapper.selectOne(wrapper);
     }
 
     // 判断id下面是否有子节点
