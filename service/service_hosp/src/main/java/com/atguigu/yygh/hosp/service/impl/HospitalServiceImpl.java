@@ -12,7 +12,9 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 public class HospitalServiceImpl implements HospitalService {
@@ -76,10 +78,38 @@ public class HospitalServiceImpl implements HospitalService {
         // 调用方法实现查询
         Page<Hospital> pages = hospitalRepository.findAll(example, pageable);
         // 获取查询list集合，遍历进行医院等级封装
-        pages.getContent().stream().forEach(item -> {
-            this.setHospitalHosType(item);
-        });
+//        pages.getContent().stream().forEach(item -> {
+//            this.setHospitalHosType(item);
+//        });
+        pages.getContent().forEach(this::setHospitalHosType);
         return pages;
+    }
+
+    // 更新医院上线状态
+    @Override
+    public void updateStatus(String id, Integer status) {
+        // 根据id查询医院信息
+        Hospital hospital = hospitalRepository.findById(id).orElse(null);
+        // 设置修改的值
+        if (hospital != null) {
+            hospital.setStatus(status);
+            hospital.setUpdateTime(new Date());
+            hospitalRepository.save(hospital);
+        }
+    }
+
+    // 医院详情信息
+    @Override
+    public Map<String, Object> getHospById(String id) {
+        Map<String, Object> map = new HashMap<>();
+        Hospital hospital = hospitalRepository.findById(id).orElse(null);
+        this.setHospitalHosType(Objects.requireNonNull(hospital));
+        // 医院基本信息（包含医院等级）
+        map.put("hospital", hospital);
+        map.put("bookingRule", hospital.getBookingRule());
+        // 不需要重复返回
+        hospital.setBookingRule(null);
+        return map;
     }
 
     // 获取查询list集合，遍历进行医院等级封装
