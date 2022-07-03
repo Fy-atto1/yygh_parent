@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class HospitalServiceImpl implements HospitalService {
@@ -117,6 +114,12 @@ public class HospitalServiceImpl implements HospitalService {
     public String getHospName(String hoscode) {
         Hospital hospital = hospitalRepository.getHospitalByHoscode(hoscode);
         return hospital != null ? hospital.getHosname() : null;
+    }
+
+    // 根据医院名称查询
+    @Override
+    public List<Hospital> findByHosName(String hosname) {
+        return hospitalRepository.getHospitalByHosnameLike(hosname);
     }
 
     // 获取查询list集合，遍历进行医院等级封装
