@@ -19,7 +19,7 @@ import java.util.Random;
 @Api(tags = "医院设置管理")
 @RestController
 @RequestMapping("/admin/hosp/hospitalSet")
-@CrossOrigin
+//@CrossOrigin
 public class HospitalSetController {
 
     private HospitalSetService hospitalSetService;
@@ -35,7 +35,7 @@ public class HospitalSetController {
     // 1 查询医院设置表的所有信息
     @ApiOperation(value = "获取所有医院设置")
     @GetMapping("findAll")
-    public Result findAllHospitalSet() {
+    public Result<List<HospitalSet>> findAllHospitalSet() {
         // 调用 Service 的方法
         List<HospitalSet> list = hospitalSetService.list();
         // 底层使用 jackson 进行 json 转换
@@ -45,7 +45,7 @@ public class HospitalSetController {
     // 2 逻辑删除医院设置
     @ApiOperation(value = "逻辑删除医院设置")
     @DeleteMapping("{id}")
-    public Result removeHospSet(@PathVariable Long id) {
+    public Result<Void> removeHospSet(@PathVariable Long id) {
         boolean flag = hospitalSetService.removeById(id);
 
         return flag ? Result.ok() : Result.fail();
@@ -53,9 +53,9 @@ public class HospitalSetController {
 
     // 3 条件查询带分页
     @PostMapping("findPageHospSet/{current}/{limit}")
-    public Result findPageHospSet(@PathVariable long current,
-                                  @PathVariable long limit,
-                                  @RequestBody(required = false) HospitalSetQueryVo hospitalSetQueryVo) {
+    public Result<Page<HospitalSet>> findPageHospSet(@PathVariable long current,
+                                                     @PathVariable long limit,
+                                                     @RequestBody(required = false) HospitalSetQueryVo hospitalSetQueryVo) {
         // 创建 Page 对象，传入当前页，每页记录数
         Page<HospitalSet> page = new Page<>(current, limit);
         // 构建条件
@@ -78,7 +78,7 @@ public class HospitalSetController {
 
     // 4 添加医院设置
     @PostMapping("saveHospitalSet")
-    public Result saveHospitalSet(@RequestBody HospitalSet hospitalSet) {
+    public Result<Void> saveHospitalSet(@RequestBody HospitalSet hospitalSet) {
         // 设置状态 1 使用 0 不能使用
         hospitalSet.setStatus(1);
         // 设置签名秘钥
@@ -92,7 +92,7 @@ public class HospitalSetController {
 
     // 5 根据 id 获取医院设置
     @GetMapping("getHospSet/{id}")
-    public Result getHospSet(@PathVariable long id) {
+    public Result<HospitalSet> getHospSet(@PathVariable long id) {
 //        try {
 //            // 模拟异常
 //            int result = 1 / 0;
@@ -105,21 +105,21 @@ public class HospitalSetController {
 
     // 6 修改医院设置
     @PostMapping("updateHospitalSet")
-    public Result updateHospitalSet(@RequestBody HospitalSet hospitalSet) {
+    public Result<Void> updateHospitalSet(@RequestBody HospitalSet hospitalSet) {
         boolean flag = hospitalSetService.updateById(hospitalSet);
         return flag ? Result.ok() : Result.fail();
     }
 
     // 7 批量删除医院设置
     @DeleteMapping("batchRemove")
-    public Result batchRemoveHospitalSet(@RequestBody List<Long> idList) {
+    public Result<Void> batchRemoveHospitalSet(@RequestBody List<Long> idList) {
         return hospitalSetService.removeByIds(idList) ? Result.ok() : Result.fail();
     }
 
     // 8 医院设置的锁定和解锁
     @PutMapping("lockHospitalSet/{id}/{status}")
-    public Result lockHospitalSet(@PathVariable Long id,
-                                  @PathVariable Integer status) {
+    public Result<Void> lockHospitalSet(@PathVariable Long id,
+                                        @PathVariable Integer status) {
         // 根据 id 查询医院设置的信息
         HospitalSet hospitalSet = hospitalSetService.getById(id);
         // 设置状态
@@ -130,7 +130,7 @@ public class HospitalSetController {
 
     // 9 发送签名秘钥
     @PutMapping("sendKey/{id}")
-    public Result sendKey(@PathVariable Long id) {
+    public Result<Void> sendKey(@PathVariable Long id) {
         HospitalSet hospitalSet = hospitalSetService.getById(id);
         String signKey = hospitalSet.getSignKey();
         String hoscode = hospitalSet.getHoscode();
