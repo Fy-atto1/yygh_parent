@@ -122,6 +122,21 @@ public class HospitalServiceImpl implements HospitalService {
         return hospitalRepository.getHospitalByHosnameLike(hosname);
     }
 
+    // 根据医院编号获取医院预约挂号详情
+    @Override
+    public Map<String, Object> item(String hoscode) {
+        Map<String, Object> result = new HashMap<>();
+        // 设置医院详情
+        Hospital hospital = this.getByHoscode(hoscode);
+        this.setHospitalHosType(hospital);
+        result.put("hospital", hospital);
+        // 预约规则
+        result.put("bookingRule", hospital.getBookingRule());
+        // 不需要重复返回预约规则
+        hospital.setBookingRule(null);
+        return result;
+    }
+
     // 获取查询list集合，遍历进行医院等级封装
     private void setHospitalHosType(Hospital hospital) {
         // 根据dictCode和value获取医院等级名称
