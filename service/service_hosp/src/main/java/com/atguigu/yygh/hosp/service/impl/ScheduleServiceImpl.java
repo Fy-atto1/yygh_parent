@@ -261,6 +261,16 @@ public class ScheduleServiceImpl implements ScheduleService {
         return result;
     }
 
+    // 根据排班id获取排班数据
+    @Override
+    public Schedule getScheduleById(String scheduleId) {
+        Schedule schedule = scheduleRepository.findById(scheduleId).orElse(null);
+        if (schedule != null) {
+            this.packageSchedule(schedule);
+        }
+        return schedule;
+    }
+
     // 获取可预约日期的数据（分页）
     private IPage<Date> getListDate(Integer page, Integer limit, BookingRule bookingRule) {
         // 获取放号时间：年 月 日 小时 分钟
@@ -311,7 +321,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         // 设置医院名称
         schedule.getParam().put("hosname", hospitalService.getHospName(schedule.getHoscode()));
         // 设置医院编号
-        schedule.getParam().put("depcode", departmentService.getDepName(schedule.getHoscode(), schedule.getDepcode()));
+        schedule.getParam().put("depname", departmentService.getDepName(schedule.getHoscode(), schedule.getDepcode()));
         // 设置日期对应的星期
         schedule.getParam().put("dayOfWeek", this.getDayOfWeek(new DateTime(schedule.getWorkDate())));
     }

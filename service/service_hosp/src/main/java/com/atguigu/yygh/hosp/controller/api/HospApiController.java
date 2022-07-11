@@ -95,5 +95,11 @@ public class HospApiController {
         return Result.ok(scheduleService.getDetailSchedule(hoscode, depcode, workDate));
     }
 
+    @ApiOperation(value = "根据排班id获取排班数据")
+    @GetMapping("getSchedule/{scheduleId}")
+    public Result<Schedule> getSchedule(@PathVariable String scheduleId) {
+        Schedule schedule = scheduleService.getScheduleById(scheduleId);
+        return Result.ok(schedule);
+    }
 
 }
