@@ -3,11 +3,14 @@ package com.atguigu.yygh.hosp.controller.api;
 import com.atguigu.yygh.common.result.Result;
 import com.atguigu.yygh.hosp.service.DepartmentService;
 import com.atguigu.yygh.hosp.service.HospitalService;
+import com.atguigu.yygh.hosp.service.HospitalSetService;
 import com.atguigu.yygh.hosp.service.ScheduleService;
 import com.atguigu.yygh.model.hosp.Hospital;
 import com.atguigu.yygh.model.hosp.Schedule;
 import com.atguigu.yygh.vo.hosp.DepartmentVo;
 import com.atguigu.yygh.vo.hosp.HospitalQueryVo;
+import com.atguigu.yygh.vo.hosp.ScheduleOrderVo;
+import com.atguigu.yygh.vo.order.SignInfoVo;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ public class HospApiController {
     private final HospitalService hospitalService;
     private final DepartmentService departmentService;
     private ScheduleService scheduleService;
+    private HospitalSetService hospitalSetService;
 
     @Autowired
     public HospApiController(HospitalService hospitalService, DepartmentService departmentService) {
@@ -37,6 +41,11 @@ public class HospApiController {
     @Autowired
     public void setScheduleService(ScheduleService scheduleService) {
         this.scheduleService = scheduleService;
+    }
+
+    @Autowired
+    public void setHospitalSetService(HospitalSetService hospitalSetService) {
+        this.hospitalSetService = hospitalSetService;
     }
 
     @ApiOperation(value = "查询医院列表")
@@ -100,6 +109,22 @@ public class HospApiController {
     public Result<Schedule> getSchedule(@PathVariable String scheduleId) {
         Schedule schedule = scheduleService.getScheduleById(scheduleId);
         return Result.ok(schedule);
+    }
+
+    @ApiOperation(value = "根据排班id获取预约下单数据")
+    @GetMapping("inner/getScheduleOrderVo/{scheduleId}")
+    public ScheduleOrderVo getScheduleOrderVo(
+            @ApiParam(name = "scheduleId", value = "排班id", required = true)
+            @PathVariable("scheduleId") String scheduleId) {
+        return scheduleService.getScheduleOrderVo(scheduleId);
+    }
+
+    @ApiOperation(value = "获取医院签名信息")
+    @GetMapping("inner/getSignInfoVo/{hoscode}")
+    public SignInfoVo getSignInfoVo(
+            @ApiParam(name = "hoscode", value = "医院code", required = true)
+            @PathVariable("hoscode") String hoscode) {
+        return hospitalSetService.getSignInfoVo(hoscode);
     }
 
 }
