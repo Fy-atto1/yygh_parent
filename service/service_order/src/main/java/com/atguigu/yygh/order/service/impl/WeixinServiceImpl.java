@@ -1,17 +1,24 @@
 package com.atguigu.yygh.order.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.atguigu.yygh.enums.PaymentTypeEnum;
+import com.atguigu.yygh.enums.RefundStatusEnum;
 import com.atguigu.yygh.model.order.OrderInfo;
+import com.atguigu.yygh.model.order.PaymentInfo;
+import com.atguigu.yygh.model.order.RefundInfo;
 import com.atguigu.yygh.order.service.OrderService;
 import com.atguigu.yygh.order.service.PaymentService;
+import com.atguigu.yygh.order.service.RefundInfoService;
 import com.atguigu.yygh.order.service.WeixinService;
 import com.atguigu.yygh.order.utils.ConstantPropertiesUtils;
 import com.atguigu.yygh.order.utils.HttpClient;
+import com.github.wxpay.sdk.WXPayConstants;
 import com.github.wxpay.sdk.WXPayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +29,7 @@ public class WeixinServiceImpl implements WeixinService {
     private OrderService orderService;
     private PaymentService paymentService;
     private RedisTemplate redisTemplate;
+    private RefundInfoService refundInfoService;
 
     @Autowired
     public void setOrderService(OrderService orderService) {
@@ -36,6 +44,11 @@ public class WeixinServiceImpl implements WeixinService {
     @Autowired
     public void setRedisTemplate(RedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
+    }
+
+    @Autowired
+    public void setRefundInfoService(RefundInfoService refundInfoService) {
+        this.refundInfoService = refundInfoService;
     }
 
     // 生成微信支付二维码
@@ -118,6 +131,64 @@ public class WeixinServiceImpl implements WeixinService {
             String xml = client.getContent();
             System.out.println("支付状态resultMap:" + WXPayUtil.xmlToMap(xml));
             return WXPayUtil.xmlToMap(xml);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // 微信退款
+    @Override
+    public Boolean refund(Long orderId) {
+        try {
+            // 获取支付记录信息
+            PaymentInfo paymentInfo = paymentService.getPaymentInfo(orderId, PaymentTypeEnum.WEIXIN.getStatus());
+            // 添加信息到退款记录表
+            RefundInfo refundInfo = refundInfoService.saveRefundInfo(paymentInfo);
+            // 判断当前订单是否已经退款
+            if (refundInfo.getRefundStatus().equals(RefundStatusEnum.REFUND.getStatus())) {
+                return true;
+            }
+            // 调用微信接口实现退款
+            // 封装需要的参数
+            Map<String, String> paramMap = new HashMap<>();
+            // 公众账号ID
+            paramMap.put("appid", ConstantPropertiesUtils.APPID);
+            // 商户编号
+            paramMap.put("mch_id", ConstantPropertiesUtils.PARTNER);
+            paramMap.put("nonce_str", WXPayUtil.generateNonceStr());
+            // 微信订单号
+            paramMap.put("transaction_id", paymentInfo.getTradeNo());
+            // 商户订单编号
+            paramMap.put("out_trade_no", paymentInfo.getOutTradeNo());
+            // 商户退款单号
+            paramMap.put("out_refund_no", "tk" + paymentInfo.getOutTradeNo());
+            // paramMap.put("total_fee",paymentInfoQuery.getTotalAmount().multiply(new BigDecimal("100")).longValue()+"");
+            // paramMap.put("refund_fee",paymentInfoQuery.getTotalAmount().multiply(new BigDecimal("100")).longValue()+"");
+            // 设置金额为1分钱用于测试
+            paramMap.put("total_fee", "1");
+            paramMap.put("refund_fee", "1");
+            String paramXml = WXPayUtil.generateSignedXml(paramMap, ConstantPropertiesUtils.PARTNERKEY);
+            // 设置调用接口内容
+            HttpClient client = new HttpClient("https://api.mch.weixin.qq.com/secapi/pay/refund");
+            client.setXmlParam(paramXml);
+            client.setHttps(true);
+            // 设置证书信息
+            client.setCert(true);
+            client.setCertPassword(ConstantPropertiesUtils.PARTNER);
+            client.post();
+            // 接收返回数据
+            String xml = client.getContent();
+            Map<String, String> resultMap = WXPayUtil.xmlToMap(xml);
+            if (WXPayConstants.SUCCESS.equalsIgnoreCase(resultMap.get("result_code"))) {
+                refundInfo.setCallbackTime(new Date());
+                refundInfo.setTradeNo(resultMap.get("refund_id"));
+                refundInfo.setRefundStatus(RefundStatusEnum.REFUND.getStatus());
+                refundInfo.setCallbackContent(JSONObject.toJSONString(resultMap));
+                refundInfoService.updateById(refundInfo);
+                return true;
+            }
+            return false;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

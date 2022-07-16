@@ -99,4 +99,13 @@ public class PaymentServiceImpl
         }
     }
 
+    // 获取支付记录
+    @Override
+    public PaymentInfo getPaymentInfo(Long orderId, Integer paymentType) {
+        QueryWrapper<PaymentInfo> wrapper = new QueryWrapper<>();
+        wrapper.eq("order_id", orderId);
+        wrapper.eq("payment_type", paymentType);
+        return baseMapper.selectOne(wrapper);
+    }
+
 }

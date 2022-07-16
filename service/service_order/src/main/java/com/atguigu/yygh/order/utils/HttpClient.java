@@ -6,6 +6,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustStrategy;
@@ -144,17 +145,18 @@ public class HttpClient {
         try {
             if (isHttps) {
                 if (isCert) {
-                    // TODO 需要完善
-                    FileInputStream inputStream = new FileInputStream(new File(""));
+                    FileInputStream inputStream = new FileInputStream(new File(ConstantPropertiesUtils.CERT));
                     KeyStore keystore = KeyStore.getInstance("PKCS12");
                     char[] partnerId2charArray = certPassword.toCharArray();
                     keystore.load(inputStream, partnerId2charArray);
                     SSLContext sslContext = SSLContexts.custom().loadKeyMaterial(keystore, partnerId2charArray).build();
+//                    SSLConnectionSocketFactory sslsf =
+//                            new SSLConnectionSocketFactory(sslContext,
+//                                    new String[]{"TLSv1"},
+//                                    null,
+//                                    SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
                     SSLConnectionSocketFactory sslsf =
-                            new SSLConnectionSocketFactory(sslContext,
-                                    new String[]{"TLSv1"},
-                                    null,
-                                    SSLConnectionSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+                            new SSLConnectionSocketFactory(sslContext, new DefaultHostnameVerifier());
                     httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
                 } else {
                     SSLContext sslContext = new SSLContextBuilder()

@@ -17,4 +17,7 @@ public interface OrderService extends IService<OrderInfo> {
 
     // 订单列表（条件查询带分页）
     IPage<OrderInfo> selectPage(Page<OrderInfo> pageParam, OrderQueryVo orderQueryVo);
+
+    // 取消预约
+    Boolean cancelOrder(Long orderId);
 }
