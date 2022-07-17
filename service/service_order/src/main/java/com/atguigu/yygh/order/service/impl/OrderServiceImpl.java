@@ -17,9 +17,7 @@ import com.atguigu.yygh.order.service.WeixinService;
 import com.atguigu.yygh.user.client.PatientFeignClient;
 import com.atguigu.yygh.vo.hosp.ScheduleOrderVo;
 import com.atguigu.yygh.vo.msm.MsmVo;
-import com.atguigu.yygh.vo.order.OrderMqVo;
-import com.atguigu.yygh.vo.order.OrderQueryVo;
-import com.atguigu.yygh.vo.order.SignInfoVo;
+import com.atguigu.yygh.vo.order.*;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -34,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl
@@ -306,6 +305,24 @@ public class OrderServiceImpl
             msmVo.setParam(param);
             rabbitService.sendMessage(MqConst.EXCHANGE_DIRECT_MSM, MqConst.ROUTING_MSM_ITEM, msmVo);
         }
+    }
+
+    // 预约统计
+    @Override
+    public Map<String, Object> getCountMap(OrderCountQueryVo orderCountQueryVo) {
+        // 调用mapper方法得到数据
+        List<OrderCountVo> orderCountVoList = baseMapper.selectOrderCount(orderCountQueryVo);
+        // 获取前端x轴需要的日期数据，并封装为list集合
+        List<String> dateList = orderCountVoList.stream()
+                .map(OrderCountVo::getReserveDate).collect(Collectors.toList());
+        // 获取前端y轴需要的预约数量数据，并封装为list集合
+        List<Integer> countList = orderCountVoList.stream()
+                .map(OrderCountVo::getCount).collect(Collectors.toList());
+        // 封装为map集合并返回
+        Map<String, Object> map = new HashMap<>();
+        map.put("dateList", dateList);
+        map.put("countList", countList);
+        return map;
     }
 
     private OrderInfo packOrderInfo(OrderInfo orderInfo) {
